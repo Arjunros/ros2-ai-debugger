@@ -122,30 +122,26 @@ ros2 topic echo /tf_static
 ros2 topic info /arm_controller/state --verbose
 ```
 
-### Finding #4: No publisher detected on /arm_controller/joint_trajectory although it has subscribers
+### Finding #4: 1 topic(s) have subscribers but no publisher
 
 - **Severity:** info
-- **Component:** `/arm_controller/joint_trajectory`
+- **Component:** `graph`
 - **Confidence:** 0.30 (heuristic, for the top possible cause)
 - **Source:** rule:R03
 
 **Observed**
 
-- /arm_controller/joint_trajectory has 0 publishers
-- /arm_controller/joint_trajectory has 1 subscriber(s): /arm_controller
+- /arm_controller/joint_trajectory: 0 publishers, 1 subscriber(s): /arm_controller
 
 **Inferred (possible causes, not confirmed)**
 
-1. Normal for command/input topics that are only published on demand
-2. The node that should publish this topic is not running
-3. The publisher uses a different topic name or namespace (remapping)
-4. Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other
+1. Normal for input/command topics that are only published on demand (goal, velocity, map or odometry inputs)
+2. If one of these is supposed to be live, the node that should publish it is not running or uses a different topic name/namespace
 
 **Recommended checks**
 
 ```bash
 ros2 topic info /arm_controller/joint_trajectory --verbose
-ros2 topic echo /arm_controller/joint_trajectory
 ```
 
 ### Finding #5: 1 recent warning log message(s) in /rosout
@@ -185,7 +181,6 @@ ros2 run tf2_ros tf2_echo arm_link1 camera_link
 ros2 topic echo /tf_static
 ros2 topic info /arm_controller/state --verbose
 ros2 topic info /arm_controller/joint_trajectory --verbose
-ros2 topic echo /arm_controller/joint_trajectory
 ros2 topic echo /rosout
 ```
 

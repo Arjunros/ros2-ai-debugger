@@ -2,6 +2,21 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- R15: detects a publisher that exists but delivers no messages, using opt-in raw message counting
+  (`--watch-topic`, or topics in `expected_publishers`). Payloads are never read. The publisher's own
+  WARN/ERROR log lines are attached as evidence.
+
+### Changed
+- R03: topics with subscribers but no publisher are grouped into one INFO finding (except `/joint_states`,
+  `/clock`, `/tf`); `/tf` is downgraded to INFO when `/tf_static` has publishers.
+- R13: a WARN message repeated 3+ times is reported as a warning instead of info.
+- R02: lifecycle `*/transition_event` topics are ignored.
+
+Found by running the tool against a real Nav2 project (see the discussion in the release notes).
+
 ## [0.1.0] - 2026-09-19
 
 First public release (pre-1.0: interfaces may change).

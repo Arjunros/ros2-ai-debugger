@@ -239,3 +239,26 @@ def test_provider_construction_error(monkeypatch):
     err = io.StringIO()
     assert run_diagnose(args, out=io.StringIO(), err=err, backend_factory=lambda s: FakeCtx(),
                         provider_factory=factory) == 2
+
+
+def test_expected_publishers_are_watched_and_silent_publisher_reported(tmp_path):
+    cfg = tmp_path / "c.json"
+    cfg.write_text(json.dumps({"expected_publishers": {"/tf": ["/robot_state_publisher"]}}))
+    import ros2_ai_debugger.cli.diagnose as d
+    seen = {}
+    orig = d.default_collectors
+
+    def spy(backend, **kw):
+        seen.update(kw)
+        backend.counts = {"/tf": 0, "/scan": 7}
+        return orig(backend, **kw)
+
+    import pytest as _pt
+    mp = _pt.MonkeyPatch()
+    mp.setattr(d, "default_collectors", spy)
+    try:
+        rc, out, _ = cli("--config", str(cfg), "--watch-topic", "/scan")
+    finally:
+        mp.undo()
+    assert seen["watch_topics"] == ["/scan", "/tf"]
+    assert "has a publisher but no messages arrived" in out and "/tf" in out

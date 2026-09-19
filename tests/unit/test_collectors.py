@@ -1,5 +1,6 @@
 from ros2_ai_debugger.collectors import collect_snapshot, default_collectors
 from ros2_ai_debugger.collectors.actions import ActionCollector
+from ros2_ai_debugger.collectors.activity import TopicActivityCollector
 from ros2_ai_debugger.collectors.base import DiagnosticCollector, full_name, is_hidden
 from ros2_ai_debugger.collectors.controllers import ControllerCollector
 from ros2_ai_debugger.collectors.diagnostics import DiagnosticsCollector
@@ -202,3 +203,15 @@ def test_topics_ignore_hidden_node_endpoints_and_phantom_topics():
 def ep_(name):
     from tests.fixtures.fake_backend import ep
     return ep(name, "x")
+
+
+def test_topic_activity_collector_counts_only_watchable_topics():
+    b = FakeBackend()
+    b.counts = {"/a": 0, "/b": 12}
+    out = TopicActivityCollector(b, ["/b", "/a", "/unknown", "/a"]).collect()
+    assert [(x.topic, x.messages, x.seconds) for x in out] == [("/a", 0, 2.0), ("/b", 12, 2.0)]
+
+
+def test_watch_topics_only_collected_when_requested():
+    assert "topic_activity" not in {c.name for c in default_collectors(FakeBackend())}
+    assert "topic_activity" in {c.name for c in default_collectors(FakeBackend(), watch_topics=["/a"])}

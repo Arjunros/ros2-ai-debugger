@@ -5,6 +5,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from ros2_ai_debugger.collectors.actions import ActionCollector
+from ros2_ai_debugger.collectors.activity import TopicActivityCollector
 from ros2_ai_debugger.collectors.base import DiagnosticCollector, RosBackend
 from ros2_ai_debugger.collectors.controllers import ControllerCollector
 from ros2_ai_debugger.collectors.diagnostics import DiagnosticsCollector
@@ -18,7 +19,9 @@ from ros2_ai_debugger.collectors.topics import TopicCollector
 from ros2_ai_debugger.models import SystemSnapshot
 
 
-def default_collectors(backend: RosBackend | None, log_entries: int = 50) -> list[DiagnosticCollector]:
+def default_collectors(
+    backend: RosBackend | None, log_entries: int = 50, watch_topics: list[str] | None = None
+) -> list[DiagnosticCollector]:
     """All collectors; ROS-dependent ones are included only when a backend is given."""
     collectors: list[DiagnosticCollector] = [EnvironmentCollector(), SystemCollector()]
     if backend is not None:
@@ -33,6 +36,8 @@ def default_collectors(backend: RosBackend | None, log_entries: int = 50) -> lis
             DiagnosticsCollector(backend),
             LogCollector(backend, max_entries=log_entries),
         ]
+        if watch_topics:
+            collectors.append(TopicActivityCollector(backend, watch_topics))
     return collectors
 
 

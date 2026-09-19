@@ -19,6 +19,7 @@ from ros2_ai_debugger.models.snapshot import (
     SystemSnapshot,
     TFEdge,
     TFInfo,
+    TopicActivity,
     TopicInfo,
 )
 
@@ -43,5 +44,6 @@ __all__ = [
     "SystemSnapshot",
     "TFEdge",
     "TFInfo",
+    "TopicActivity",
     "TopicInfo",
 ]

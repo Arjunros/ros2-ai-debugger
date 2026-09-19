@@ -15,6 +15,7 @@ What is broken (on purpose):
   * TF has two disconnected trees (base_link.. and camera_link..).
   * /scan: BEST_EFFORT publisher vs RELIABLE subscriber (QoS mismatch).
   * /lifecycle_demo is stuck in the 'unconfigured' lifecycle state.
+  * /imu_driver has a publisher on /imu/data but never publishes ("sensor not connected").
   * An action client waits for a server that does not exist.
   * /arm_controller logs an error periodically.
 
@@ -30,7 +31,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.lifecycle import Node as LifecycleNode
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
-from sensor_msgs.msg import JointState, LaserScan
+from sensor_msgs.msg import Imu, JointState, LaserScan
 from std_msgs.msg import String
 from tf2_msgs.msg import TFMessage
 
@@ -82,8 +83,12 @@ def main():
     planner = Node("planner")
     ActionClient(planner, Fibonacci, "/compute_path")  # no server anywhere
 
+    imu = Node("imu_driver")
+    imu.create_publisher(Imu, "/imu/data", 10)  # created, but nothing is ever published
+    imu.create_timer(1.0, lambda: imu.get_logger().warn("Could not open /dev/ttyUSB1: no such device"))
+
     ex = MultiThreadedExecutor()
-    nodes = [arm, cm, rsp, lidar, mapper, lc, planner]
+    nodes = [arm, cm, rsp, lidar, mapper, lc, planner, imu]
     for n in nodes:
         ex.add_node(n)
     print("broken robot running; Ctrl+C to stop")

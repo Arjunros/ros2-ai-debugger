@@ -33,6 +33,7 @@ class FakeBackend:
         self.log: list[LogEntry] = []
         self.lifecycle: dict[str, str] = {}
         self.controllers: dict[str, list[ControllerInfo]] = {}
+        self.counts: dict[str, int] = {}
 
     def add_node(self, name, ns="/", *, pub=(), sub=(), srv=(), cli=(), act_srv=(), act_cli=()):
         self.nodes.append((name, ns))
@@ -56,6 +57,9 @@ class FakeBackend:
     def logs(self): return list(self.log)
     def lifecycle_state(self, node): return self.lifecycle.get(node)
     def list_controllers(self, manager): return self.controllers.get(manager)
+
+    def message_counts(self, topics):
+        return {t: self.counts[t] for t in topics if t in self.counts}, 2.0
 
 
 def broken_robot_backend() -> FakeBackend:

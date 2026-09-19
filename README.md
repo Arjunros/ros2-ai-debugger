@@ -34,8 +34,9 @@ the core works with no API key and no network, and AI is one optional, replaceab
 - `ros2 ai diagnose` integrates as a native `ros2` command (via the `ros2cli` extension point).
 - Collectors for nodes, topics (with QoS), services, actions, TF, lifecycle state, ros2_control
   controllers, `/diagnostics`, `/rosout`, and host CPU / memory / disk / network.
-- 14 deterministic rules (see [docs/architecture.md](docs/architecture.md)), including QoS
-  incompatibility, disconnected TF trees, inactive lifecycle nodes, and missing publishers/servers.
+- 15 deterministic rules (see [docs/architecture.md](docs/architecture.md)), including QoS
+  incompatibility, disconnected TF trees, inactive lifecycle nodes, missing publishers/servers, and publishers
+  that exist but are silent (opt-in message counting).
 - Optional AI analysis through four providers: Claude, OpenAI, Gemini, Ollama (local).
 - AI output is **validated**: strict schema, only components that exist in the snapshot, only allowlisted
   read-only commands.

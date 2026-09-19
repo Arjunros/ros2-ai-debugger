@@ -19,6 +19,7 @@ _IGNORED_NO_PUBLISHER = {"/parameter_events", "/rosout"}
 #: Topics whose absence is a real problem on essentially every robot. Any other
 #: topic without a publisher is reported at INFO, since command/input topics
 #: (cmd_vel, joint_trajectory, ...) are legitimately idle until someone publishes.
+REPEATED_LOG_THRESHOLD = 3  # identical WARN messages needed to call a warning persistent
 _STATE_TOPICS = {"/joint_states", "/tf", "/clock"}
 _IGNORED_NO_SUBSCRIBER = {
     "/parameter_events", "/rosout", "/tf", "/tf_static", "/robot_description", "/diagnostics",
@@ -66,6 +67,7 @@ def r02_unconsumed_topics(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Findin
     topics = [
         t.name for t in s.topics
         if t.publishers and not t.subscribers and t.name not in _IGNORED_NO_SUBSCRIBER
+        and not t.name.endswith("/transition_event")  # lifecycle noise on every managed node
     ]
     if not topics:
         return []
@@ -84,35 +86,53 @@ def r02_unconsumed_topics(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Findin
 
 # R03 ------------------------------------------------------------------------
 def r03_missing_publisher(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Finding]:
-    out = []
+    out: list[Finding] = []
+    quiet: list = []  # INFO-level topics are grouped into one finding to avoid noise
+    tf_static = s.topic("/tf_static")
+    static_tf_available = bool(tf_static and tf_static.publishers)
     for t in s.topics:
-        if t.subscribers and not t.publishers and t.name not in _IGNORED_NO_PUBLISHER:
-            observed = [
-                f"{t.name} has 0 publishers",
-                f"{t.name} has {len(t.subscribers)} subscriber(s): "
-                + ", ".join(x.node_name for x in t.subscribers),
-            ]
-            causes = [
-                "Normal for command/input topics that are only published on demand",
-                "The node that should publish this topic is not running",
-                "The publisher uses a different topic name or namespace (remapping)",
-                "Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other",
-            ]
-            checks = [f"ros2 topic info {t.name} --verbose", f"ros2 topic echo {t.name}"]
-            confidence = 0.6
-            severity = Severity.WARNING if t.name in _STATE_TOPICS else Severity.INFO
-            if severity is Severity.INFO:
-                confidence = 0.3
-            if t.name == "/joint_states":
-                obs, cause, chk, conf = _joint_states_hints(s)
-                observed += obs
-                causes = cause + causes[1:2]
-                checks = chk + checks
-                confidence = conf
-            out.append(_f("R03", severity, t.name,
-                          f"No publisher detected on {t.name} although it has subscribers",
-                          observed=observed, possible_causes=causes,
-                          recommended_checks=checks, confidence=confidence))
+        if not (t.subscribers and not t.publishers) or t.name in _IGNORED_NO_PUBLISHER:
+            continue
+        subs = ", ".join(x.node_name for x in t.subscribers)
+        if t.name not in _STATE_TOPICS or (t.name == "/tf" and static_tf_available):
+            quiet.append(t)
+            continue
+        observed = [f"{t.name} has 0 publishers",
+                    f"{t.name} has {len(t.subscribers)} subscriber(s): {subs}"]
+        causes = [
+            "The node that should publish this topic is not running",
+            "The publisher uses a different topic name or namespace (remapping)",
+            "Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other",
+        ]
+        checks = [f"ros2 topic info {t.name} --verbose", f"ros2 topic echo {t.name}"]
+        confidence = 0.6
+        if t.name == "/joint_states":
+            obs, cause, chk, confidence = _joint_states_hints(s)
+            observed += obs
+            causes = cause + causes[:1]
+            checks = chk + checks
+        out.append(_f("R03", Severity.WARNING, t.name,
+                      f"No publisher detected on {t.name} although it has subscribers",
+                      observed=observed, possible_causes=causes,
+                      recommended_checks=checks, confidence=confidence))
+    if quiet:
+        observed = [f"{t.name}: 0 publishers, {len(t.subscribers)} subscriber(s): "
+                    + ", ".join(x.node_name for x in t.subscribers) for t in quiet[:20]]
+        if len(quiet) > 20:
+            observed.append(f"... and {len(quiet) - 20} more")
+        if any(t.name == "/tf" for t in quiet):
+            observed.append("/tf_static has publisher(s): only static transforms are being published")
+        out.append(_f(
+            "R03", Severity.INFO, "graph",
+            f"{len(quiet)} topic(s) have subscribers but no publisher",
+            observed=observed,
+            possible_causes=[
+                "Normal for input/command topics that are only published on demand "
+                "(goal, velocity, map or odometry inputs)",
+                "If one of these is supposed to be live, the node that should publish it is not "
+                "running or uses a different topic name/namespace",
+            ],
+            recommended_checks=[f"ros2 topic info {quiet[0].name} --verbose"], confidence=0.3))
     return out
 
 
@@ -328,11 +348,20 @@ def r13_log_errors(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Finding]:
         for e in entries:
             counts[(e.logger, e.message)] = counts.get((e.logger, e.message), 0) + 1
         top = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
+        repeating = [k for k, n in counts.items() if n >= REPEATED_LOG_THRESHOLD]
+        problem = f"{len(entries)} recent {label} log message(s) in /rosout"
+        causes = ["Log messages often name the failing component; they may or may not be "
+                  "related to other findings"]
+        if label == "warning" and repeating:
+            # The same warning again and again is a persistent condition, not a one-off.
+            sev = Severity.WARNING
+            problem += f" ({len(repeating)} repeating)"
+            causes.insert(0, "The same warning repeats, which suggests a persistent condition "
+                             "(for example unavailable hardware) rather than a one-off event")
         out.append(_f(
-            "R13", sev, "logs", f"{len(entries)} recent {label} log message(s) in /rosout",
+            "R13", sev, "logs", problem,
             observed=[f"{n}x [{lg}] {msg}" for (lg, msg), n in top],
-            possible_causes=["Log messages often name the failing component; they may or may not be "
-                             "related to other findings"],
+            possible_causes=causes,
             recommended_checks=["ros2 topic echo /rosout"], confidence=0.4))
     return out
 
@@ -349,9 +378,46 @@ def r14_diagnostics(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Finding]:
     ]
 
 
+# R15 ------------------------------------------------------------------------
+def _logger_matches(logger: str, node: str) -> bool:
+    return logger.strip("/").replace("/", ".") == node.strip("/").replace("/", ".")
+
+
+def r15_silent_publisher(s: SystemSnapshot, cfg: ExpectedConfig) -> list[Finding]:
+    """A watched topic has publishers but delivered no messages during the window."""
+    out = []
+    for act in s.topic_activity:
+        topic = s.topic(act.topic)
+        if act.messages > 0 or topic is None or not topic.publishers:
+            continue
+        pubs = [p.node_name for p in topic.publishers]
+        related = [e for e in s.logs if e.level in ("WARN", "ERROR", "FATAL")
+                   and any(_logger_matches(e.logger, n) for n in pubs)]
+        unique = list(dict.fromkeys(f"[{e.logger}] {e.message}" for e in related))[:3]
+        observed = [f"{act.topic} has {len(pubs)} publisher(s): {', '.join(pubs)}",
+                    f"0 messages received in {act.seconds:g}s"]
+        observed += [f"log from publisher: {u}" for u in unique]
+        out.append(_f(
+            "R15", Severity.WARNING, act.topic,
+            f"{act.topic} has a publisher but no messages arrived in {act.seconds:g}s",
+            observed=observed,
+            possible_causes=[
+                "The publishing node is running but its data source is unavailable "
+                "(e.g. a sensor or hardware not connected, or a driver failing)"
+                + (" - the publisher's own log output above points this way" if unique else ""),
+                "The node publishes only on events, or slower than the watch window",
+                "QoS or discovery problem between the watcher and the publisher",
+            ],
+            recommended_checks=[f"ros2 topic hz {act.topic}", f"ros2 topic info {act.topic} --verbose",
+                                f"ros2 node info {pubs[0]}"],
+            confidence=0.8 if unique else 0.55))
+    return out
+
+
 ALL_RULES: list[Rule] = [
     r01_expected_publisher_missing, r02_unconsumed_topics, r03_missing_publisher,
     r04_required_node_missing, r05_tf_disconnected, r06_lifecycle_not_active,
     r07_action_server_unavailable, r08_resources, r09_domain_id, r10_qos_mismatch,
     r11_controllers_not_active, r12_empty_graph, r13_log_errors, r14_diagnostics,
+    r15_silent_publisher,
 ]

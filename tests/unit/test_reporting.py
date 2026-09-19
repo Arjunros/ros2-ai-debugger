@@ -49,8 +49,7 @@ def test_broken_robot_expected_findings_deterministic():
     f = broken_report().rule_findings
     assert [(x.severity.label, x.component, x.source) for x in f] == [
         ("warning", "/joint_states", "rule:R03"), ("warning", "tf", "rule:R05"),
-        ("info", "graph", "rule:R02"), ("info", "/arm_controller/joint_trajectory", "rule:R03"),
-        ("info", "logs", "rule:R13")]
+        ("info", "graph", "rule:R02"), ("info", "graph", "rule:R03"), ("info", "logs", "rule:R13")]
 
 
 def test_healthy_report_and_overall_labels():

@@ -63,12 +63,24 @@ def test_r02_unconsumed_and_ignored_topics():
 
 
 # R03
-def test_r03_missing_publisher_severity():
-    s = snap(topics=[topic("/cmd_vel", subs=["/base"]), topic("/tf", subs=["/viz"]),
-                     topic("/rosout", subs=["/x"])])
-    f = {x.component: x for x in rules.r03_missing_publisher(s, CFG)}
-    assert set(f) == {"/cmd_vel", "/tf"}
-    assert f["/cmd_vel"].severity == Severity.INFO and f["/tf"].severity == Severity.WARNING
+def test_r03_state_topic_is_warning_and_others_grouped_as_info():
+    s = snap(topics=[topic("/cmd_vel", subs=["/base"]), topic("/goal_pose", subs=["/bt"]),
+                     topic("/tf", subs=["/viz"]), topic("/rosout", subs=["/x"])])
+    f = rules.r03_missing_publisher(s, CFG)
+    assert [(x.component, x.severity) for x in f] == [("/tf", Severity.WARNING), ("graph", Severity.INFO)]
+    grouped = f[1]
+    assert "2 topic(s)" in grouped.problem and len(grouped.observed) == 2
+
+
+def test_r03_tf_downgraded_when_only_static_transforms():
+    s = snap(topics=[topic("/tf", subs=["/viz"]), topic("/tf_static", pubs=["/base_to_tof"], subs=["/viz"])])
+    (f,) = rules.r03_missing_publisher(s, CFG)
+    assert f.severity == Severity.INFO and any("only static transforms" in o for o in f.observed)
+
+
+def test_r02_ignores_lifecycle_transition_events():
+    s = snap(topics=[topic("/nav/transition_event", pubs=["/nav"])])
+    assert rules.r02_unconsumed_topics(s, CFG) == []
 
 
 def test_r03_joint_states_correlates_controllers():
@@ -185,7 +197,7 @@ def test_broken_robot_findings():
     f = analyze(broken_robot_snapshot())
     assert [(x.source, x.component) for x in f] == [
         ("rule:R03", "/joint_states"), ("rule:R05", "tf"),
-        ("rule:R02", "graph"), ("rule:R03", "/arm_controller/joint_trajectory"), ("rule:R13", "logs")]
+        ("rule:R02", "graph"), ("rule:R03", "graph"), ("rule:R13", "logs")]
     by = {(x.source, x.component): x for x in f}
     js = by[("rule:R03", "/joint_states")]
     assert js.severity == Severity.WARNING and js.confidence == 0.85
@@ -211,3 +223,42 @@ def test_all_recommended_checks_are_read_only():
 ])
 def test_command_allowlist(cmd, ok):
     assert is_read_only_command(cmd) is ok
+
+
+# R15
+def _silent_snapshot(messages=0, logger="/sensor_driver"):
+    from ros2_ai_debugger.models import TopicActivity
+    return snap(topics=[topic("/range", pubs=["/sensor_driver"], subs=["/scan_node"])],
+                topic_activity=[TopicActivity("/range", messages, 2.0)],
+                logs=[LogEntry("WARN", logger, "Could not open /dev/ttyUSB0", 1)])
+
+
+def test_r15_silent_publisher_correlates_publisher_logs():
+    (f,) = rules.r15_silent_publisher(_silent_snapshot(), CFG)
+    assert f.severity == Severity.WARNING and f.component == "/range"
+    assert "0 messages received in 2s" in f.observed
+    assert "log from publisher: [/sensor_driver] Could not open /dev/ttyUSB0" in f.observed
+    assert f.confidence == 0.8 and all(is_read_only_command(c) for c in f.recommended_checks)
+
+
+def test_r15_logger_name_normalization_and_no_correlation():
+    (f,) = rules.r15_silent_publisher(_silent_snapshot(logger="sensor_driver"), CFG)
+    assert f.confidence == 0.8
+    (g,) = rules.r15_silent_publisher(_silent_snapshot(logger="someone_else"), CFG)
+    assert g.confidence == 0.55 and not any(o.startswith("log from") for o in g.observed)
+
+
+def test_r15_quiet_when_messages_flow_or_no_publisher():
+    assert rules.r15_silent_publisher(_silent_snapshot(messages=5), CFG) == []
+    from ros2_ai_debugger.models import TopicActivity
+    s = snap(topics=[topic("/range", subs=["/x"])], topic_activity=[TopicActivity("/range", 0, 2.0)])
+    assert rules.r15_silent_publisher(s, CFG) == []  # missing publisher is R01/R03's job
+
+
+def test_r13_repeating_warning_is_promoted_to_warning():
+    logs = [LogEntry("WARN", "bridge", "Could not open /dev/ttyUSB0", t) for t in range(3)]
+    (f,) = rules.r13_log_errors(snap(logs=logs), CFG)
+    assert f.severity == Severity.WARNING and "1 repeating" in f.problem
+    assert "persistent condition" in f.possible_causes[0]
+    two = rules.r13_log_errors(snap(logs=logs[:2]), CFG)
+    assert two[0].severity == Severity.INFO

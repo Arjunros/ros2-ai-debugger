@@ -209,6 +209,41 @@ class RclpyBackend:
     def logs(self) -> list[LogEntry]:
         return list(self._logs)
 
+    # -- opt-in message counting ------------------------------------------------
+    def message_counts(self, topics: list[str]) -> tuple[dict[str, int], float]:
+        """Count messages with *raw* subscriptions: payloads are never deserialized.
+
+        Uses BEST_EFFORT/VOLATILE, which is compatible with any publisher, and only
+        the topics the user named. Subscriptions are removed afterwards.
+        """
+        from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+        from rosidl_runtime_py.utilities import get_message
+
+        types = dict(self.topic_names_and_types())
+        counts: dict[str, int] = {}
+        subs = []
+        qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT,
+                         durability=DurabilityPolicy.VOLATILE)
+
+        def make_cb(topic: str):
+            def cb(_raw) -> None:
+                counts[topic] += 1
+            return cb
+
+        for topic in topics:
+            if topic not in types or not types[topic]:
+                continue
+            try:
+                msg_type = get_message(types[topic][0])
+            except (ImportError, ValueError, AttributeError):
+                continue
+            counts[topic] = 0
+            subs.append(self._node.create_subscription(msg_type, topic, make_cb(topic), qos, raw=True))
+        self._spin(self._listen)
+        for s in subs:
+            self._node.destroy_subscription(s)
+        return counts, self._listen
+
     # -- the two read-only service queries --------------------------------
     def _call(self, srv_type, service: str, request):
         client = self._node.create_client(srv_type, service)

@@ -71,6 +71,10 @@ def add_arguments(p: argparse.ArgumentParser) -> None:
     col.add_argument("--expect-node", action="append", default=[], metavar="NODE",
                      help="node that must be running (repeatable)")
     col.add_argument("--expect-domain-id", metavar="ID", help="expected ROS_DOMAIN_ID")
+    col.add_argument("--watch-topic", action="append", default=[], metavar="TOPIC",
+                     help="count messages on this topic (repeatable) to detect publishers that are silent. "
+                          "Topics in the config's expected_publishers are watched automatically. Only the "
+                          "message count is kept; payloads are never deserialized, stored or sent")
 
 
 class UsageError(Exception):
@@ -142,7 +146,8 @@ def run_diagnose(
         else:
             print("Collecting ROS 2 diagnostics (read-only)...", file=err)
             with backend_factory(args.listen_seconds) as backend:
-                raw = collect_snapshot(default_collectors(backend))
+                watch = sorted(set(args.watch_topic) | set(config.expected_publishers))
+                raw = collect_snapshot(default_collectors(backend, watch_topics=watch))
     except ImportError as exc:  # pragma: no cover - depends on environment
         print(f"error: {exc}", file=err)
         return EXIT_ERROR

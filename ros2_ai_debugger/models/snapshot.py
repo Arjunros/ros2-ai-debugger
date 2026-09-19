@@ -159,6 +159,15 @@ class NetworkInterfaceInfo:
 
 
 @dataclass
+class TopicActivity:
+    """Message count on a topic during a watch window (payloads are never read)."""
+
+    topic: str
+    messages: int
+    seconds: float
+
+
+@dataclass
 class SystemResourceInfo:
     cpu_percent: float | None = None
     cpu_count: int = 0
@@ -198,6 +207,7 @@ class SystemSnapshot:
     diagnostics: list[DiagnosticMessage] = field(default_factory=list)
     logs: list[LogEntry] = field(default_factory=list)
     system: SystemResourceInfo | None = None
+    topic_activity: list[TopicActivity] = field(default_factory=list)
     collection_errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:

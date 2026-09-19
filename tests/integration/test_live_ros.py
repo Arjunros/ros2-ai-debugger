@@ -42,13 +42,13 @@ def domain(monkeypatch):
     monkeypatch.setenv("ROS_DOMAIN_ID", DOMAIN)
 
 
-def _live_report(listen=2.5):
+def _live_report(listen=2.5, watch=None):
     from ros2_ai_debugger.analyzers import analyze
     from ros2_ai_debugger.collectors import collect_snapshot, default_collectors
     from ros2_ai_debugger.collectors.rclpy_backend import RclpyBackend
 
     with RclpyBackend(listen_seconds=listen) as backend:
-        snap = collect_snapshot(default_collectors(backend))
+        snap = collect_snapshot(default_collectors(backend, watch_topics=watch))
     return snap, analyze(snap)
 
 
@@ -99,3 +99,14 @@ def test_ros2_ai_command_is_registered(demo_robot):
     assert run.returncode == 0, run.stderr
     report = json.loads(run.stdout)
     assert any(f["component"] == "/joint_states" for f in report["findings"])
+
+
+def test_live_silent_publisher_detected_without_reading_payloads(demo_robot, domain):
+    """/imu/data has a publisher that never publishes; /scan really streams (control)."""
+    snap, findings = _live_report(watch=["/imu/data", "/scan"])
+    counts = {a.topic: a.messages for a in snap.topic_activity}
+    assert counts["/imu/data"] == 0 and counts["/scan"] > 0
+    silent = [f for f in findings if f.source == "rule:R15"]
+    assert [f.component for f in silent] == ["/imu/data"]  # /scan must not be flagged
+    assert any("Could not open /dev/ttyUSB1" in o for o in silent[0].observed)
+    assert silent[0].confidence == 0.8

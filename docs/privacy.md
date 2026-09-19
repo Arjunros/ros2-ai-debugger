@@ -10,7 +10,8 @@ interface names/addresses, and these environment variables only: `ROS_DISTRO`, `
 `RMW_IMPLEMENTATION`, `ROS_LOCALHOST_ONLY`.
 
 **Never collected:** other environment variables, file contents, parameter values, message payloads (camera
-images, point clouds, joint values...), credentials.
+images, point clouds, joint values...), credentials. The one exception in spirit is `--watch-topic`: it subscribes to
+the topics you name and keeps **only a message count** (raw subscription, payload bytes are discarded unread).
 
 ## When data is sent anywhere
 

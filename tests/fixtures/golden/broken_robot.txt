@@ -73,22 +73,18 @@ Confidence: 0.30 (heuristic weight for the top possible cause)
 Source:     rule:R02
 
 FINDING #4  [INFO]
-Component:  /arm_controller/joint_trajectory
-Problem:    No publisher detected on /arm_controller/joint_trajectory although it has subscribers
+Component:  graph
+Problem:    1 topic(s) have subscribers but no publisher
 
 OBSERVED (read directly from the system):
-  - /arm_controller/joint_trajectory has 0 publishers
-  - /arm_controller/joint_trajectory has 1 subscriber(s): /arm_controller
+  - /arm_controller/joint_trajectory: 0 publishers, 1 subscriber(s): /arm_controller
 
 INFERRED (possible causes, NOT confirmed):
-  1. Normal for command/input topics that are only published on demand
-  2. The node that should publish this topic is not running
-  3. The publisher uses a different topic name or namespace (remapping)
-  4. Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other
+  1. Normal for input/command topics that are only published on demand (goal, velocity, map or odometry inputs)
+  2. If one of these is supposed to be live, the node that should publish it is not running or uses a different topic name/namespace
 
 RECOMMENDED (read-only checks):
   $ ros2 topic info /arm_controller/joint_trajectory --verbose
-  $ ros2 topic echo /arm_controller/joint_trajectory
 
 Confidence: 0.30 (heuristic weight for the top possible cause)
 Source:     rule:R03

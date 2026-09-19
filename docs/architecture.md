@@ -54,7 +54,7 @@ continue. Normalization details worth knowing:
 |---|---|---|---|
 | R01 | A node listed in `expected_publishers` does not publish that topic | Yes | warning |
 | R02 | Topics have publishers but no subscribers (common system topics ignored) | No | info |
-| R03 | A topic has subscribers but no publishers. WARNING for `/joint_states`, `/tf`, `/clock`; INFO otherwise, since idle command topics are normal | No | warning/info |
+| R03 | A topic has subscribers but no publishers. WARNING for `/joint_states`, `/tf` (INFO if `/tf_static` has publishers), `/clock`; every other topic is grouped into one INFO finding, since idle input/command topics are normal | No | warning/info |
 | R04 | A node in `required_nodes` is not running | Yes | error |
 | R05 | TF frames form more than one connected tree | No | warning |
 | R06 | A lifecycle node is not `active` (`errorprocessing` is an error) | No | warning/error |
@@ -64,15 +64,26 @@ continue. Normalization details worth knowing:
 | R10 | Publisher/subscriber QoS incompatible: BEST_EFFORT vs RELIABLE, VOLATILE vs TRANSIENT_LOCAL | No | error |
 | R11 | A ros2_control controller is not `active` | No | warning |
 | R12 | No nodes visible at all (domain/RMW/localhost-only/network hints) | No | warning |
-| R13 | Recent ERROR/FATAL (warning) or WARN (info) log messages | No | warning/info |
+| R13 | Recent ERROR/FATAL log messages (warning); WARN messages (info, or warning if the same message repeats 3+ times, which suggests a persistent condition) | No | warning/info |
 | R14 | A `/diagnostics` status is not OK | No | warning |
+| R15 | A watched topic has publishers but delivered **no messages** in the window; the publisher's own WARN/ERROR logs are attached as evidence | Topics from `expected_publishers` or `--watch-topic` | warning |
 
-R11-R14 go beyond the original list because they use data the collectors already gather. Rules that need
+R11-R15 go beyond the original list because they use data the collectors already gather. Rules that need
 knowledge of *your* robot (R01, R04, R07 required servers, R09) only fire when you provide expectations via
 `--config`, `--expect-node` or `--expect-domain-id`. The tool never guesses what your robot requires.
 
 QoS (R10) covers only the two rules decidable from the values rclpy exposes; deadline, lifespan and
 liveliness compatibility are not checked. `SYSTEM_DEFAULT`/`UNKNOWN` values are skipped, not guessed.
+
+### Message counting (R15)
+
+"A publisher exists" is not "data is flowing". For topics you name (`--watch-topic`, or the topics in
+`expected_publishers`) the backend counts messages with **raw subscriptions**: payloads are never deserialized,
+stored, or sent, only the count. It uses BEST_EFFORT/VOLATILE, which is compatible with any publisher. Nothing is
+watched unless you ask.
+
+Limits: a driver that publishes placeholder values (for example `range = inf` for "no reading") looks healthy to a
+counter; the tool deliberately does not inspect payloads. Topics slower than the window also look silent.
 
 ### Expectations file
 

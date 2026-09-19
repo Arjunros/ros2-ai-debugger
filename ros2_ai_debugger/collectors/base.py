@@ -51,6 +51,12 @@ class RosBackend(Protocol):
     def logs(self) -> list[LogEntry]: ...
     def lifecycle_state(self, node: str) -> str | None: ...
     def list_controllers(self, manager: str) -> list[ControllerInfo] | None: ...
+    def message_counts(self, topics: list[str]) -> tuple[dict[str, int], float]:
+        """Count messages per topic over a window; returns (counts, seconds).
+
+        Topics that cannot be watched (unknown, or no type available) are omitted.
+        Payloads must never be deserialized or retained.
+        """
 
 
 class DiagnosticCollector(ABC):
