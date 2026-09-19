@@ -48,4 +48,6 @@ jobs:
           source /ws/install/setup.bash
           ros2 ai version
           ros2 ai doctor || true
-          cd /ws/src/ros2_ai_debugger && python3 -m pytest -q -m "not nothing" -p no:cacheprovider
+          cd /ws/src/ros2_ai_debugger
+          export REQUIRE_ROS=1
+          python3 -m pytest -q -rs -p no:cacheprovider

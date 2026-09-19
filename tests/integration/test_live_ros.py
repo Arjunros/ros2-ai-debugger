@@ -15,7 +15,10 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("rclpy")
+if os.environ.get("REQUIRE_ROS"):  # CI: a missing ROS environment must fail, not skip
+    import rclpy  # noqa: F401
+else:
+    pytest.importorskip("rclpy")
 pytestmark = pytest.mark.ros
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,12 +85,13 @@ def test_live_backend_is_read_only(demo_robot, domain):
     assert before.node_names() == after.node_names()
 
 
-@pytest.mark.skipif(shutil.which("ros2") is None, reason="ros2 CLI not on PATH")
+@pytest.mark.skipif(shutil.which("ros2") is None and not os.environ.get("REQUIRE_ROS"),
+                    reason="ros2 CLI not on PATH")
 def test_ros2_ai_command_is_registered(demo_robot):
     env = {**os.environ, "ROS_DOMAIN_ID": DOMAIN,
            "PYTHONPATH": os.pathsep.join([str(ROOT), os.environ.get("PYTHONPATH", "")])}
     ver = subprocess.run(["ros2", "ai", "version"], env=env, capture_output=True, text=True, timeout=60)
-    if "invalid choice" in ver.stderr:
+    if "invalid choice" in ver.stderr and not os.environ.get("REQUIRE_ROS"):
         pytest.skip("ros2-ai-debugger is not installed into the ROS 2 Python environment")
     assert ver.returncode == 0 and "ros2-ai-debugger" in ver.stdout
     run = subprocess.run(["ros2", "ai", "diagnose", "--format", "json", "--listen-seconds", "2.5"],
