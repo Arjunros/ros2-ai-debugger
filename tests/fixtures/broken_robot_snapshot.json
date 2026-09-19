@@ -1,0 +1,239 @@
+{
+  "collected_at": "2026-01-15T12:00:00Z",
+  "schema_version": 1,
+  "environment": {
+    "ros_distro": "humble",
+    "ros_domain_id": null,
+    "rmw_implementation": "rmw_fastrtps_cpp",
+    "localhost_only": null,
+    "os_name": "Ubuntu 22.04.5 LTS",
+    "python_version": "3.10.12",
+    "hostname": "robot-pc"
+  },
+  "nodes": [
+    {
+      "name": "/arm_controller",
+      "publishes": [
+        "/arm_controller/state"
+      ],
+      "subscribes": [
+        "/arm_controller/joint_trajectory"
+      ],
+      "services": [
+        "/arm_controller/get_parameters"
+      ],
+      "clients": [],
+      "action_servers": [],
+      "action_clients": []
+    },
+    {
+      "name": "/controller_manager",
+      "publishes": [],
+      "subscribes": [],
+      "services": [
+        "/controller_manager/list_controllers"
+      ],
+      "clients": [],
+      "action_servers": [],
+      "action_clients": []
+    },
+    {
+      "name": "/robot_state_publisher",
+      "publishes": [
+        "/robot_description",
+        "/tf",
+        "/tf_static"
+      ],
+      "subscribes": [
+        "/joint_states"
+      ],
+      "services": [],
+      "clients": [],
+      "action_servers": [],
+      "action_clients": []
+    }
+  ],
+  "topics": [
+    {
+      "name": "/arm_controller/joint_trajectory",
+      "types": [
+        "trajectory_msgs/msg/JointTrajectory"
+      ],
+      "publishers": [],
+      "subscribers": [
+        {
+          "node_name": "/arm_controller",
+          "topic_type": "trajectory_msgs/msg/JointTrajectory",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "/arm_controller/state",
+      "types": [
+        "control_msgs/msg/JointTrajectoryControllerState"
+      ],
+      "publishers": [
+        {
+          "node_name": "/arm_controller",
+          "topic_type": "control_msgs/msg/JointTrajectoryControllerState",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ],
+      "subscribers": []
+    },
+    {
+      "name": "/joint_states",
+      "types": [
+        "sensor_msgs/msg/JointState"
+      ],
+      "publishers": [],
+      "subscribers": [
+        {
+          "node_name": "/robot_state_publisher",
+          "topic_type": "sensor_msgs/msg/JointState",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "/robot_description",
+      "types": [
+        "std_msgs/msg/String"
+      ],
+      "publishers": [
+        {
+          "node_name": "/robot_state_publisher",
+          "topic_type": "std_msgs/msg/String",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ],
+      "subscribers": []
+    },
+    {
+      "name": "/tf",
+      "types": [
+        "tf2_msgs/msg/TFMessage"
+      ],
+      "publishers": [
+        {
+          "node_name": "/robot_state_publisher",
+          "topic_type": "tf2_msgs/msg/TFMessage",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ],
+      "subscribers": []
+    },
+    {
+      "name": "/tf_static",
+      "types": [
+        "tf2_msgs/msg/TFMessage"
+      ],
+      "publishers": [
+        {
+          "node_name": "/robot_state_publisher",
+          "topic_type": "tf2_msgs/msg/TFMessage",
+          "qos": {
+            "reliability": "RELIABLE",
+            "durability": "VOLATILE",
+            "history": "KEEP_LAST",
+            "depth": 10
+          }
+        }
+      ],
+      "subscribers": []
+    }
+  ],
+  "services": [
+    {
+      "name": "/controller_manager/list_controllers",
+      "types": [
+        "controller_manager_msgs/srv/ListControllers"
+      ],
+      "providers": [
+        "/controller_manager"
+      ]
+    }
+  ],
+  "actions": [],
+  "tf": {
+    "listen_seconds": 2.0,
+    "edges": [
+      {
+        "child": "arm_link2",
+        "parent": "arm_link1",
+        "is_static": false
+      },
+      {
+        "child": "arm_link1",
+        "parent": "base_link",
+        "is_static": false
+      },
+      {
+        "child": "camera_optical_frame",
+        "parent": "camera_link",
+        "is_static": true
+      }
+    ]
+  },
+  "lifecycle": [],
+  "controllers": {
+    "manager": "/controller_manager",
+    "controllers": [
+      {
+        "name": "arm_controller",
+        "type": "joint_trajectory_controller/JointTrajectoryController",
+        "state": "active"
+      }
+    ]
+  },
+  "diagnostics": [],
+  "logs": [
+    {
+      "level": "WARN",
+      "logger": "/robot_state_publisher",
+      "message": "No JointState messages received",
+      "stamp": 101.0
+    }
+  ],
+  "system": {
+    "cpu_percent": 12.5,
+    "cpu_count": 8,
+    "load_avg": [
+      0.4,
+      0.5,
+      0.6
+    ],
+    "memory_percent": 41.0,
+    "memory_total_mb": 16000,
+    "disk_percent": 55.0,
+    "disk_path": "/",
+    "network": []
+  },
+  "collection_errors": []
+}

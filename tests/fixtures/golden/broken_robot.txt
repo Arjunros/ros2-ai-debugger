@@ -1,0 +1,112 @@
+ROS 2 AI DIAGNOSTIC REPORT
+
+System:
+  ROS 2 Humble
+  Ubuntu 22.04.5 LTS
+  Nodes: 3  Topics: 6  Services: 1  Actions: 0
+
+Overall:
+  ⚠ Potential issue detected
+
+RULE-BASED FINDINGS (deterministic)
+
+FINDING #1  [WARNING]
+Component:  /joint_states
+Problem:    No publisher detected on /joint_states although it has subscribers
+
+OBSERVED (read directly from the system):
+  - /joint_states has 0 publishers
+  - /joint_states has 1 subscriber(s): /robot_state_publisher
+  - controller manager /controller_manager is running
+  - controller 'arm_controller' (joint_trajectory_controller/JointTrajectoryController) is active
+  - no controller of type JointStateBroadcaster is loaded
+
+INFERRED (possible causes, NOT confirmed):
+  1. joint_state_broadcaster is not loaded/spawned in controller_manager
+  2. Controller configuration or robot hardware interface failure
+  3. The node that should publish this topic is not running
+
+RECOMMENDED (read-only checks):
+  $ ros2 control list_controllers
+  $ ros2 topic info /joint_states --verbose
+  $ ros2 topic echo /joint_states
+
+Confidence: 0.85 (heuristic weight for the top possible cause)
+Source:     rule:R03
+
+FINDING #2  [WARNING]
+Component:  tf
+Problem:    TF frames form 2 disconnected trees
+
+OBSERVED (read directly from the system):
+  - 5 frames observed in 2 disconnected trees (listened 2s)
+  - tree 1: arm_link1, arm_link2, base_link
+  - tree 2: camera_link, camera_optical_frame
+
+INFERRED (possible causes, NOT confirmed):
+  1. A transform publisher (e.g. robot_state_publisher, static_transform_publisher, localization) is missing or not running
+  2. Frame names differ between publishers (typo or missing prefix)
+  3. Normal if separate trees are intentional or a transform is published slower than the listen window
+
+RECOMMENDED (read-only checks):
+  $ ros2 run tf2_ros tf2_echo arm_link1 camera_link
+  $ ros2 topic echo /tf_static
+
+Confidence: 0.60 (heuristic weight for the top possible cause)
+Source:     rule:R05
+
+FINDING #3  [INFO]
+Component:  graph
+Problem:    1 topic(s) have publishers but no subscribers
+
+OBSERVED (read directly from the system):
+  - /arm_controller/state: 1 publisher(s), 0 subscribers
+
+INFERRED (possible causes, NOT confirmed):
+  1. Often harmless (data published for optional consumers such as rosbag or rviz)
+  2. A consumer node may be missing, not started, or subscribed under a different name
+
+RECOMMENDED (read-only checks):
+  $ ros2 topic info /arm_controller/state --verbose
+
+Confidence: 0.30 (heuristic weight for the top possible cause)
+Source:     rule:R02
+
+FINDING #4  [INFO]
+Component:  /arm_controller/joint_trajectory
+Problem:    No publisher detected on /arm_controller/joint_trajectory although it has subscribers
+
+OBSERVED (read directly from the system):
+  - /arm_controller/joint_trajectory has 0 publishers
+  - /arm_controller/joint_trajectory has 1 subscriber(s): /arm_controller
+
+INFERRED (possible causes, NOT confirmed):
+  1. Normal for command/input topics that are only published on demand
+  2. The node that should publish this topic is not running
+  3. The publisher uses a different topic name or namespace (remapping)
+  4. Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other
+
+RECOMMENDED (read-only checks):
+  $ ros2 topic info /arm_controller/joint_trajectory --verbose
+  $ ros2 topic echo /arm_controller/joint_trajectory
+
+Confidence: 0.30 (heuristic weight for the top possible cause)
+Source:     rule:R03
+
+FINDING #5  [INFO]
+Component:  logs
+Problem:    1 recent warning log message(s) in /rosout
+
+OBSERVED (read directly from the system):
+  - 1x [/robot_state_publisher] No JointState messages received
+
+INFERRED (possible causes, NOT confirmed):
+  1. Log messages often name the failing component; they may or may not be related to other findings
+
+RECOMMENDED (read-only checks):
+  $ ros2 topic echo /rosout
+
+Confidence: 0.40 (heuristic weight for the top possible cause)
+Source:     rule:R13
+
+AI analysis not enabled. Add --local (Ollama) or --provider <name> to enable it.

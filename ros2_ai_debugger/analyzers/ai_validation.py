@@ -126,9 +126,10 @@ def validate_ai_response(text: str, snapshot: SystemSnapshot, source: str = "ai"
         kept_checks = []
         for c in checks:
             if not is_read_only_command(c):
-                result.warnings.append(f"{tag}: dropped non-allowlisted command {c!r}")
+                # Deliberately not echoed: a rejected command must never appear where it could be copy-pasted.
+                result.warnings.append(f"{tag}: dropped a recommended command that is not on the read-only allowlist")
             elif _unknown_names(c, known):
-                result.warnings.append(f"{tag}: dropped command citing unknown name(s): {c!r}")
+                result.warnings.append(f"{tag}: dropped a recommended command citing names not in the snapshot")
             else:
                 kept_checks.append(c)
         result.findings.append(Finding(

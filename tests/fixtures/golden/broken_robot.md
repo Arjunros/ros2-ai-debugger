@@ -1,0 +1,193 @@
+# ROS 2 AI Diagnostic Report
+
+**Overall:** ⚠️ Potential issue detected
+
+## Environment
+
+| | |
+|---|---|
+| ROS 2 distribution | humble |
+| ROS_DOMAIN_ID | unset (default 0) |
+| RMW implementation | rmw_fastrtps_cpp |
+| ROS_LOCALHOST_ONLY | unset |
+| OS | Ubuntu 22.04.5 LTS |
+| Python | 3.10.12 |
+| ros2-ai-debugger | {version} |
+| Collected at | 2026-01-15T12:00:00Z |
+
+## System snapshot
+
+- Nodes: 3
+- Topics: 6
+- Services: 1
+- Actions: 0
+- TF frames: 5
+- CPU 12.5%, memory 41.0%, disk 55.0% (8 cores)
+
+<details><summary>Nodes and topics</summary>
+
+**Nodes**
+
+- `/arm_controller`
+- `/controller_manager`
+- `/robot_state_publisher`
+
+**Topics** (publishers / subscribers)
+
+- `/arm_controller/joint_trajectory` (0 / 1)
+- `/arm_controller/state` (1 / 0)
+- `/joint_states` (0 / 1)
+- `/robot_description` (1 / 0)
+- `/tf` (1 / 0)
+- `/tf_static` (1 / 0)
+
+</details>
+
+## Detected problems
+
+### Finding #1: No publisher detected on /joint_states although it has subscribers
+
+- **Severity:** warning
+- **Component:** `/joint_states`
+- **Confidence:** 0.85 (heuristic, for the top possible cause)
+- **Source:** rule:R03
+
+**Observed**
+
+- /joint_states has 0 publishers
+- /joint_states has 1 subscriber(s): /robot_state_publisher
+- controller manager /controller_manager is running
+- controller 'arm_controller' (joint_trajectory_controller/JointTrajectoryController) is active
+- no controller of type JointStateBroadcaster is loaded
+
+**Inferred (possible causes, not confirmed)**
+
+1. joint_state_broadcaster is not loaded/spawned in controller_manager
+2. Controller configuration or robot hardware interface failure
+3. The node that should publish this topic is not running
+
+**Recommended checks**
+
+```bash
+ros2 control list_controllers
+ros2 topic info /joint_states --verbose
+ros2 topic echo /joint_states
+```
+
+### Finding #2: TF frames form 2 disconnected trees
+
+- **Severity:** warning
+- **Component:** `tf`
+- **Confidence:** 0.60 (heuristic, for the top possible cause)
+- **Source:** rule:R05
+
+**Observed**
+
+- 5 frames observed in 2 disconnected trees (listened 2s)
+- tree 1: arm_link1, arm_link2, base_link
+- tree 2: camera_link, camera_optical_frame
+
+**Inferred (possible causes, not confirmed)**
+
+1. A transform publisher (e.g. robot_state_publisher, static_transform_publisher, localization) is missing or not running
+2. Frame names differ between publishers (typo or missing prefix)
+3. Normal if separate trees are intentional or a transform is published slower than the listen window
+
+**Recommended checks**
+
+```bash
+ros2 run tf2_ros tf2_echo arm_link1 camera_link
+ros2 topic echo /tf_static
+```
+
+### Finding #3: 1 topic(s) have publishers but no subscribers
+
+- **Severity:** info
+- **Component:** `graph`
+- **Confidence:** 0.30 (heuristic, for the top possible cause)
+- **Source:** rule:R02
+
+**Observed**
+
+- /arm_controller/state: 1 publisher(s), 0 subscribers
+
+**Inferred (possible causes, not confirmed)**
+
+1. Often harmless (data published for optional consumers such as rosbag or rviz)
+2. A consumer node may be missing, not started, or subscribed under a different name
+
+**Recommended checks**
+
+```bash
+ros2 topic info /arm_controller/state --verbose
+```
+
+### Finding #4: No publisher detected on /arm_controller/joint_trajectory although it has subscribers
+
+- **Severity:** info
+- **Component:** `/arm_controller/joint_trajectory`
+- **Confidence:** 0.30 (heuristic, for the top possible cause)
+- **Source:** rule:R03
+
+**Observed**
+
+- /arm_controller/joint_trajectory has 0 publishers
+- /arm_controller/joint_trajectory has 1 subscriber(s): /arm_controller
+
+**Inferred (possible causes, not confirmed)**
+
+1. Normal for command/input topics that are only published on demand
+2. The node that should publish this topic is not running
+3. The publisher uses a different topic name or namespace (remapping)
+4. Publisher and subscriber are in different ROS_DOMAIN_IDs or not discovering each other
+
+**Recommended checks**
+
+```bash
+ros2 topic info /arm_controller/joint_trajectory --verbose
+ros2 topic echo /arm_controller/joint_trajectory
+```
+
+### Finding #5: 1 recent warning log message(s) in /rosout
+
+- **Severity:** info
+- **Component:** `logs`
+- **Confidence:** 0.40 (heuristic, for the top possible cause)
+- **Source:** rule:R13
+
+**Observed**
+
+- 1x [/robot_state_publisher] No JointState messages received
+
+**Inferred (possible causes, not confirmed)**
+
+1. Log messages often name the failing component; they may or may not be related to other findings
+
+**Recommended checks**
+
+```bash
+ros2 topic echo /rosout
+```
+
+## AI analysis
+
+Not used (disabled). Findings above are rule-based only.
+
+## Relevant commands
+
+All commands are read-only.
+
+```bash
+ros2 control list_controllers
+ros2 topic info /joint_states --verbose
+ros2 topic echo /joint_states
+ros2 run tf2_ros tf2_echo arm_link1 camera_link
+ros2 topic echo /tf_static
+ros2 topic info /arm_controller/state --verbose
+ros2 topic info /arm_controller/joint_trajectory --verbose
+ros2 topic echo /arm_controller/joint_trajectory
+ros2 topic echo /rosout
+```
+
+---
+*Generated by [ros2-ai-debugger](https://github.com/Arjunros/ros2-ai-debugger) {version}. Read-only diagnosis; observations are collected facts, causes are inferences. Hostnames, IP addresses, usernames and paths were masked.*
