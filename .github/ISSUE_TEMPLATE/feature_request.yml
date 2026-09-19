@@ -1,0 +1,19 @@
+name: Feature or rule request
+description: Suggest a collector, rule, provider or CLI improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to diagnose?
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: What observable ROS 2 data would identify it?
+      description: Rules must rest on data the snapshot contains. What API or topic exposes it?
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed behavior

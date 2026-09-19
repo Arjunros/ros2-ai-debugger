@@ -1,0 +1,37 @@
+name: Bug report
+description: Something is wrong (crash, false positive, missed problem)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Please **review any report or log for sensitive data before posting**.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      placeholder: ros2 ai diagnose --output report.md
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `ros2 ai doctor`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Report (attach `ros2 ai diagnose --output github-report.md`, which is redacted)
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options: [Crash or error, False positive (finding is wrong), False negative (missed a real problem), Other]
