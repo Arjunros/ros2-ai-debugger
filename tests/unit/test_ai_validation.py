@@ -2,11 +2,18 @@ import json
 
 import pytest
 
-from ros2_ai_debugger.analyzers.ai_prompt import (
-    SYSTEM_PROMPT, build_payload, build_user_prompt, summarize_payload,
-)
-from ros2_ai_debugger.analyzers.ai_validation import AIResponseError, known_names, validate_ai_response
 from ros2_ai_debugger.analyzers import analyze
+from ros2_ai_debugger.analyzers.ai_prompt import (
+    SYSTEM_PROMPT,
+    build_payload,
+    build_user_prompt,
+    summarize_payload,
+)
+from ros2_ai_debugger.analyzers.ai_validation import (
+    AIResponseError,
+    known_names,
+    validate_ai_response,
+)
 from ros2_ai_debugger.models import Severity
 from tests.fixtures.scenarios import broken_robot_snapshot
 

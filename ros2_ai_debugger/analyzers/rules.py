@@ -6,7 +6,7 @@ in ``possible_causes`` (inference) and phrased as a possibility.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from ros2_ai_debugger.analyzers.config import ExpectedConfig
 from ros2_ai_debugger.collectors.qos import qos_mismatches

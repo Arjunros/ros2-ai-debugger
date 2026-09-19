@@ -24,7 +24,7 @@ class ExpectedConfig:
     disk_warn_percent: float = 90.0
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "ExpectedConfig":
+    def from_file(cls, path: str | Path) -> ExpectedConfig:
         """Load a JSON file; unknown keys are an error to catch typos early."""
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         known = set(cls.__dataclass_fields__)

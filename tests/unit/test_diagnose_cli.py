@@ -1,3 +1,4 @@
+import argparse
 import io
 import json
 
@@ -8,7 +9,6 @@ from ros2_ai_debugger.cli.diagnose import run_diagnose
 from ros2_ai_debugger.cli.main import add_subcommands
 from ros2_ai_debugger.providers import AIProvider, ProviderError
 from tests.fixtures.fake_backend import broken_robot_backend
-import argparse
 
 REPLY = json.dumps({"summary": "Broadcaster missing.", "missing_information": ["hardware logs"], "findings": [{
     "severity": "warning", "component": "/joint_states", "problem": "no joint state source",

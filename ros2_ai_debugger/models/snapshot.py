@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ros2_ai_debugger.models.serialization import from_dict, to_dict
 
@@ -161,22 +160,22 @@ class NetworkInterfaceInfo:
 
 @dataclass
 class SystemResourceInfo:
-    cpu_percent: Optional[float] = None
+    cpu_percent: float | None = None
     cpu_count: int = 0
     load_avg: list[float] = field(default_factory=list)
-    memory_percent: Optional[float] = None
-    memory_total_mb: Optional[int] = None
-    disk_percent: Optional[float] = None
+    memory_percent: float | None = None
+    memory_total_mb: int | None = None
+    disk_percent: float | None = None
     disk_path: str = "/"
     network: list[NetworkInterfaceInfo] = field(default_factory=list)
 
 
 @dataclass
 class EnvironmentInfo:
-    ros_distro: Optional[str] = None
-    ros_domain_id: Optional[str] = None  # None => variable unset (default 0)
-    rmw_implementation: Optional[str] = None
-    localhost_only: Optional[str] = None
+    ros_distro: str | None = None
+    ros_domain_id: str | None = None  # None => variable unset (default 0)
+    rmw_implementation: str | None = None
+    localhost_only: str | None = None
     os_name: str = ""
     python_version: str = ""
     hostname: str = ""
@@ -193,24 +192,24 @@ class SystemSnapshot:
     topics: list[TopicInfo] = field(default_factory=list)
     services: list[ServiceInfo] = field(default_factory=list)
     actions: list[ActionInfo] = field(default_factory=list)
-    tf: Optional[TFInfo] = None
+    tf: TFInfo | None = None
     lifecycle: list[LifecycleInfo] = field(default_factory=list)
-    controllers: Optional[ControllersInfo] = None
+    controllers: ControllersInfo | None = None
     diagnostics: list[DiagnosticMessage] = field(default_factory=list)
     logs: list[LogEntry] = field(default_factory=list)
-    system: Optional[SystemResourceInfo] = None
+    system: SystemResourceInfo | None = None
     collection_errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return to_dict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "SystemSnapshot":
+    def from_dict(cls, data: dict) -> SystemSnapshot:
         return from_dict(cls, data)
 
     # Convenience lookups used by analyzers -------------------------------
     def node_names(self) -> set[str]:
         return {n.name for n in self.nodes}
 
-    def topic(self, name: str) -> Optional[TopicInfo]:
+    def topic(self, name: str) -> TopicInfo | None:
         return next((t for t in self.topics if t.name == name), None)

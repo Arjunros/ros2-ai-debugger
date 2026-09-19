@@ -4,7 +4,13 @@ from pathlib import Path
 from ros2_ai_debugger import __version__
 from ros2_ai_debugger.analyzers import analyze
 from ros2_ai_debugger.models import Finding, Severity, SystemSnapshot
-from ros2_ai_debugger.reporting import AIStatus, Report, render_json, render_markdown, render_terminal
+from ros2_ai_debugger.reporting import (
+    AIStatus,
+    Report,
+    render_json,
+    render_markdown,
+    render_terminal,
+)
 from tests.fixtures.scenarios import broken_robot_snapshot
 
 GOLDEN = Path(__file__).parent.parent / "fixtures" / "golden"
@@ -66,7 +72,8 @@ def test_color_only_when_enabled():
 
 def test_ai_sections_rendered():
     r = broken_report()
-    r.ai_findings = [Finding(Severity.WARNING, "/joint_states", "AI says", ["obs"], ["cause"], ["ros2 node list"], 0.7, "ai:claude")]
+    r.ai_findings = [Finding(Severity.WARNING, "/joint_states", "AI says", ["obs"], ["cause"],
+                             ["ros2 node list"], 0.7, "ai:claude")]
     r.ai = AIStatus("used", "claude", "claude (model: m)", "summary text", ["need logs"], ["dropped x"])
     text, md = render_terminal(r), render_markdown(r)
     for out in (text, md):

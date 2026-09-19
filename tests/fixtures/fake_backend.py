@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from ros2_ai_debugger.collectors.base import RawNodeEndpoints
 from ros2_ai_debugger.models import (
-    ControllerInfo, DiagnosticMessage, EndpointInfo, LogEntry, QoSInfo, TFEdge,
+    ControllerInfo,
+    DiagnosticMessage,
+    EndpointInfo,
+    LogEntry,
+    QoSInfo,
+    TFEdge,
 )
 
 REL = QoSInfo("RELIABLE", "VOLATILE", "KEEP_LAST", 10)
@@ -31,7 +36,9 @@ class FakeBackend:
 
     def add_node(self, name, ns="/", *, pub=(), sub=(), srv=(), cli=(), act_srv=(), act_cli=()):
         self.nodes.append((name, ns))
-        t = lambda items: [(n, [ty]) for n, ty in items]  # noqa: E731
+        def t(items):
+            return [(n, [ty]) for n, ty in items]
+
         self.endpoints[(name, ns)] = RawNodeEndpoints(
             t(pub), t(sub), t(srv), t(cli), t(act_srv), t(act_cli))
 

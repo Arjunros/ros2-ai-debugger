@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import time
 
-from ros2_ai_debugger.collectors.base import RawNodeEndpoints, NameAndTypes
+from ros2_ai_debugger.collectors.base import NameAndTypes, RawNodeEndpoints
 from ros2_ai_debugger.collectors.nodes import SELF_NODE_NAME
 from ros2_ai_debugger.models import (
     ControllerInfo,
@@ -49,7 +49,7 @@ class RclpyBackend:
         self._logs: list[LogEntry] = []
 
     # -- lifecycle ---------------------------------------------------------
-    def __enter__(self) -> "RclpyBackend":
+    def __enter__(self) -> RclpyBackend:
         try:
             import rclpy
         except ImportError as exc:  # pragma: no cover - depends on environment

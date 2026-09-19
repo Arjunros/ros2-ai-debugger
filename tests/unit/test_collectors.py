@@ -9,12 +9,22 @@ from ros2_ai_debugger.collectors.nodes import NodeCollector
 from ros2_ai_debugger.collectors.qos import qos_mismatches
 from ros2_ai_debugger.collectors.services import ServiceCollector
 from ros2_ai_debugger.collectors.system import (
-    EnvironmentCollector, SystemCollector, parse_cpu_times, parse_meminfo,
+    EnvironmentCollector,
+    SystemCollector,
+    parse_cpu_times,
+    parse_meminfo,
 )
 from ros2_ai_debugger.collectors.tf import TFCollector
 from ros2_ai_debugger.collectors.topics import TopicCollector
 from ros2_ai_debugger.models import (
-    DiagnosticMessage, LogEntry, PublisherInfo, QoSInfo, SubscriberInfo, TFEdge, TFInfo, TopicInfo,
+    DiagnosticMessage,
+    LogEntry,
+    PublisherInfo,
+    QoSInfo,
+    SubscriberInfo,
+    TFEdge,
+    TFInfo,
+    TopicInfo,
 )
 from tests.fixtures.fake_backend import BEST, REL, FakeBackend, broken_robot_backend
 

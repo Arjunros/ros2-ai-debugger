@@ -8,7 +8,12 @@ import sys
 from typing import TextIO
 
 from ros2_ai_debugger import __version__
-from ros2_ai_debugger.providers import ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider
+from ros2_ai_debugger.providers import (
+    ClaudeProvider,
+    GeminiProvider,
+    OllamaProvider,
+    OpenAIProvider,
+)
 from ros2_ai_debugger.utils.distro import SUPPORTED_DISTROS
 
 OK, WARN, FAIL = "ok", "warn", "FAIL"
@@ -25,7 +30,9 @@ def _module(name: str) -> bool:
 def run_checks(environ=None) -> list[tuple[str, str, str]]:
     env = os.environ if environ is None else environ
     checks: list[tuple[str, str, str]] = []
-    add = lambda status, name, detail: checks.append((status, name, detail))  # noqa: E731
+
+    def add(status: str, name: str, detail: str) -> None:
+        checks.append((status, name, detail))
 
     py = sys.version_info
     add(OK if py >= (3, 10) else FAIL, "Python", f"{py.major}.{py.minor}.{py.micro} (need >= 3.10)")
@@ -38,7 +45,8 @@ def run_checks(environ=None) -> list[tuple[str, str, str]]:
     else:
         add(WARN, "ROS 2 distribution", f"{distro} is not tested; supported: {', '.join(SUPPORTED_DISTROS)}")
 
-    add(OK if _module("rclpy") else FAIL, "rclpy", "importable" if _module("rclpy") else "not importable (source ROS 2)")
+    has_rclpy = _module("rclpy")
+    add(OK if has_rclpy else FAIL, "rclpy", "importable" if has_rclpy else "not importable (source ROS 2)")
     for mod, why in (("tf2_msgs", "TF collection"), ("diagnostic_msgs", "/diagnostics"),
                      ("rcl_interfaces", "/rosout logs"), ("lifecycle_msgs", "lifecycle state")):
         add(OK if _module(mod) else WARN, mod, "available" if _module(mod) else f"missing: {why} disabled")

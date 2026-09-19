@@ -38,7 +38,7 @@ def known_names(snap: SystemSnapshot) -> set[str]:
     names |= {t.name for t in snap.topics}
     names |= {s.name for s in snap.services}
     names |= {a.name for a in snap.actions}
-    names |= {l.node for l in snap.lifecycle}
+    names |= {lc.node for lc in snap.lifecycle}
     if snap.controllers:
         names.add(snap.controllers.manager)
         names |= {c.name for c in snap.controllers.controllers}
@@ -114,7 +114,8 @@ def validate_ai_response(text: str, snapshot: SystemSnapshot, source: str = "ai"
         causes = _strings(raw.get("possible_causes", []), f"{tag} possible_causes", result.warnings)
         checks = _strings(raw.get("recommended_checks", []), f"{tag} recommended_checks", result.warnings)
         if observed is None or causes is None or checks is None:
-            result.warnings.append(f"{tag}: dropped (observed/possible_causes/recommended_checks must be lists of strings)")
+            result.warnings.append(
+                f"{tag}: dropped (observed/possible_causes/recommended_checks must be lists of strings)")
             continue
         kept_obs = []
         for o in observed:

@@ -4,19 +4,34 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, TextIO
+from typing import TextIO
 
 from ros2_ai_debugger.analyzers import ExpectedConfig, analyze
 from ros2_ai_debugger.analyzers.ai_prompt import (
-    SYSTEM_PROMPT, build_payload, build_user_prompt, summarize_payload,
+    SYSTEM_PROMPT,
+    build_payload,
+    build_user_prompt,
+    summarize_payload,
 )
 from ros2_ai_debugger.analyzers.ai_validation import AIResponseError
 from ros2_ai_debugger.collectors import collect_snapshot, default_collectors
 from ros2_ai_debugger.models import Severity, SystemSnapshot
 from ros2_ai_debugger.privacy import Redactor
-from ros2_ai_debugger.providers import PROVIDERS, AIProvider, OllamaProvider, ProviderError, get_provider
-from ros2_ai_debugger.reporting import AIStatus, Report, render_json, render_markdown, render_terminal
+from ros2_ai_debugger.providers import (
+    PROVIDERS,
+    AIProvider,
+    ProviderError,
+    get_provider,
+)
+from ros2_ai_debugger.reporting import (
+    AIStatus,
+    Report,
+    render_json,
+    render_markdown,
+    render_terminal,
+)
 from ros2_ai_debugger.utils.term import supports_color, supports_unicode
 
 EXIT_OK, EXIT_FINDINGS, EXIT_ERROR = 0, 1, 2

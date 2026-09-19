@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from typing import Callable
+from collections.abc import Callable
 
 from ros2_ai_debugger.providers.base import ProviderError
 
@@ -17,7 +17,7 @@ def post_json(url: str, body: dict, headers: dict, timeout: float) -> dict:
         url, data=json.dumps(body).encode(), method="POST",
         headers={"Content-Type": "application/json", **headers})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - http(s) only, see providers
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode(errors="replace")[:300]
@@ -30,7 +30,7 @@ def post_json(url: str, body: dict, headers: dict, timeout: float) -> dict:
 
 def get_json(url: str, timeout: float) -> dict:
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
             return json.loads(resp.read())
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
         raise ProviderError(f"could not query {url}: {getattr(exc, 'reason', exc)}") from None

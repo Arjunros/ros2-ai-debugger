@@ -1,11 +1,23 @@
 import pytest
 
-from ros2_ai_debugger.analyzers import ExpectedConfig, analyze
-from ros2_ai_debugger.analyzers import rules
+from ros2_ai_debugger.analyzers import ExpectedConfig, analyze, rules
 from ros2_ai_debugger.models import (
-    ActionInfo, ControllerInfo, ControllersInfo, DiagnosticMessage, EnvironmentInfo, LifecycleInfo,
-    LogEntry, NodeInfo, PublisherInfo, QoSInfo, Severity, SubscriberInfo, SystemResourceInfo,
-    SystemSnapshot, TFEdge, TFInfo, TopicInfo,
+    ActionInfo,
+    ControllerInfo,
+    ControllersInfo,
+    DiagnosticMessage,
+    EnvironmentInfo,
+    LifecycleInfo,
+    LogEntry,
+    NodeInfo,
+    PublisherInfo,
+    Severity,
+    SubscriberInfo,
+    SystemResourceInfo,
+    SystemSnapshot,
+    TFEdge,
+    TFInfo,
+    TopicInfo,
 )
 from ros2_ai_debugger.utils.commands import is_read_only_command
 from tests.fixtures.fake_backend import BEST, REL
@@ -60,7 +72,8 @@ def test_r03_missing_publisher_severity():
 
 
 def test_r03_joint_states_correlates_controllers():
-    ctl = ControllersInfo("/controller_manager", [ControllerInfo("jsb", "joint_state_broadcaster/JointStateBroadcaster", "inactive")])
+    jsb = ControllerInfo("jsb", "joint_state_broadcaster/JointStateBroadcaster", "inactive")
+    ctl = ControllersInfo("/controller_manager", [jsb])
     s = snap(topics=[topic("/joint_states", subs=["/rsp"])], controllers=ctl)
     (f,) = rules.r03_missing_publisher(s, CFG)
     assert "joint_state_broadcaster is loaded but not active" in f.possible_causes
@@ -177,7 +190,8 @@ def test_broken_robot_findings():
     js = by[("rule:R03", "/joint_states")]
     assert js.severity == Severity.WARNING and js.confidence == 0.85
     assert "no controller of type JointStateBroadcaster is loaded" in js.observed
-    assert "controller 'arm_controller' (joint_trajectory_controller/JointTrajectoryController) is active" in js.observed
+    assert ("controller 'arm_controller' (joint_trajectory_controller/JointTrajectoryController) is active"
+            in js.observed)
     assert ("rule:R05", "tf") in by
     assert f == sorted(f, key=lambda x: (-int(x.severity), x.source, x.component))
 

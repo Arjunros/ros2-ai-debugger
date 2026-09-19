@@ -1,0 +1,12 @@
+{
+  "required_nodes": ["/controller_manager", "/robot_state_publisher"],
+  "expected_publishers": {
+    "/joint_states": ["/joint_state_broadcaster"],
+    "/scan": ["/lidar"]
+  },
+  "required_action_servers": ["/navigate_to_pose"],
+  "expected_domain_id": "0",
+  "cpu_warn_percent": 90,
+  "memory_warn_percent": 90,
+  "disk_warn_percent": 90
+}

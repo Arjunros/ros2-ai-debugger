@@ -1,8 +1,8 @@
 """Modular diagnostic collectors."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Callable
 
 from ros2_ai_debugger.collectors.actions import ActionCollector
 from ros2_ai_debugger.collectors.base import DiagnosticCollector, RosBackend

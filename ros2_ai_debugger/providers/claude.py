@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ros2_ai_debugger.providers.base import AIProvider, ProviderError
 

@@ -23,5 +23,13 @@ def get_provider(name: str, model: str | None = None, **kwargs) -> AIProvider:
     return cls(model=model, **kwargs)
 
 
-__all__ = ["AIProvider", "ProviderError", "PROVIDERS", "get_provider", "ClaudeProvider",
-           "OpenAIProvider", "GeminiProvider", "OllamaProvider"]
+__all__ = [
+    "PROVIDERS",
+    "AIProvider",
+    "ClaudeProvider",
+    "GeminiProvider",
+    "OllamaProvider",
+    "OpenAIProvider",
+    "ProviderError",
+    "get_provider",
+]

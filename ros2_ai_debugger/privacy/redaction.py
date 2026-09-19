@@ -20,7 +20,7 @@ import re
 from ros2_ai_debugger.models import SystemSnapshot
 
 _SECRET_PATTERNS = [
-    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)", re.S),
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)", re.DOTALL),
     re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}"),
     re.compile(r"\bAIza[0-9A-Za-z_\-]{20,}"),
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}"),
@@ -84,7 +84,7 @@ class Redactor:
         if self.mask_identifiers:
             out.environment.hostname = "<host>" if out.environment.hostname else ""
             if out.system:
-                for i, nic in enumerate(out.system.network, 1):
+                for nic in out.system.network:
                     nic.ipv4 = self._placeholder("ip", nic.ipv4) if nic.ipv4 else ""
         return out
 

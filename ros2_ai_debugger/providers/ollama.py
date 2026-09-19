@@ -56,9 +56,13 @@ class OllamaProvider(AIProvider):
         if self._require_local and not self.is_local:
             raise ProviderError(
                 f"--local requires a loopback Ollama host, but OLLAMA_HOST points to {self.host}")
+        # Ollama silently truncates prompts longer than num_ctx (default 2-4k tokens),
+        # which would drop the system prompt. Size the window to the input (~3 chars/token).
+        num_ctx = min(32768, max(4096, (len(system) + len(user)) // 3 + 2048))
         data = self._post(
             f"{self.host}/api/chat",
-            {"model": self.model, "stream": False, "format": "json", "options": {"temperature": 0},
+            {"model": self.model, "stream": False, "format": "json",
+             "options": {"temperature": 0, "num_ctx": num_ctx},
              "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]},
             {}, self._timeout)
         try:

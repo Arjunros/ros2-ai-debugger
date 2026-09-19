@@ -3,7 +3,15 @@ import types
 
 import pytest
 
-from ros2_ai_debugger.providers import PROVIDERS, ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider, ProviderError, get_provider
+from ros2_ai_debugger.providers import (
+    PROVIDERS,
+    ClaudeProvider,
+    GeminiProvider,
+    OllamaProvider,
+    OpenAIProvider,
+    ProviderError,
+    get_provider,
+)
 from ros2_ai_debugger.providers.ollama import is_loopback_url, normalize_host
 from tests.fixtures.scenarios import broken_robot_snapshot
 
@@ -125,6 +133,9 @@ def test_ollama_local_detection_and_request(monkeypatch):
     assert p.analyze(SNAP).findings
     assert seen["url"] == "http://127.0.0.1:11434/api/chat" and seen["body"]["stream"] is False
     assert seen["headers"] == {}  # no credentials
+    # the context window must cover the whole prompt so Ollama does not truncate the system prompt
+    total = sum(len(m["content"]) for m in seen["body"]["messages"])
+    assert seen["body"]["options"]["num_ctx"] >= total // 3
 
 
 @pytest.mark.parametrize("host,local", [
@@ -154,3 +165,29 @@ def test_http_helper_maps_errors():
     with pytest.raises(ProviderError, match="could not reach") as e:
         post_json("http://127.0.0.1:1/x", {}, {"Authorization": "Bearer SECRET"}, 1)
     assert "SECRET" not in str(e.value)
+
+
+def test_claude_with_real_sdk_and_mocked_transport(monkeypatch):
+    """Exercise the real anthropic SDK request/response path with no network."""
+    anthropic = pytest.importorskip("anthropic")
+    httpx = pytest.importorskip("httpx2")  # anthropic >= 1.x uses httpx2
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = str(request.url)
+        seen["body"] = json.loads(request.content)
+        seen["key_header"] = request.headers.get("x-api-key")
+        return httpx.Response(200, json={
+            "id": "msg_1", "type": "message", "role": "assistant", "model": "claude-sonnet-5",
+            "content": [{"type": "text", "text": REPLY}], "stop_reason": "end_turn",
+            "usage": {"input_tokens": 1, "output_tokens": 1}})
+
+    def factory(key):
+        return anthropic.Anthropic(api_key=key, http_client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+    result = ClaudeProvider(client_factory=factory).analyze(SNAP)
+    assert seen["url"].endswith("/v1/messages") and seen["key_header"] == "sk-ant-test"
+    assert seen["body"]["model"] == "claude-sonnet-5" and seen["body"]["max_tokens"] == 4096
+    assert "Never invent" in seen["body"]["system"] and seen["body"]["messages"][0]["role"] == "user"
+    assert result.findings[0].component == "/joint_states"

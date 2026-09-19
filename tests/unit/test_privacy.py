@@ -1,4 +1,9 @@
-from ros2_ai_debugger.models import DiagnosticMessage, LogEntry, NetworkInterfaceInfo, SystemResourceInfo
+from ros2_ai_debugger.models import (
+    DiagnosticMessage,
+    LogEntry,
+    NetworkInterfaceInfo,
+    SystemResourceInfo,
+)
 from ros2_ai_debugger.privacy import Redactor
 from tests.fixtures.scenarios import broken_robot_snapshot
 

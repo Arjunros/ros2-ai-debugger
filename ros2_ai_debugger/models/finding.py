@@ -15,7 +15,7 @@ class Severity(IntEnum):
         return self.name.lower()
 
     @classmethod
-    def parse(cls, text: str) -> "Severity":
+    def parse(cls, text: str) -> Severity:
         return cls[text.strip().upper()]
 
 
