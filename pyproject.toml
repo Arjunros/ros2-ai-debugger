@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=59"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["ros: needs a sourced ROS 2 environment (rclpy)"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
