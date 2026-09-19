@@ -10,7 +10,7 @@ package_name = "ros2_ai_debugger"
 
 setup(
     name=package_name,
-    version="0.1.0.dev0",
+    version="0.1.0",
     description="AI-assisted diagnostics and troubleshooting for ROS 2 systems.",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

@@ -1,5 +1,9 @@
 # ros2-ai-debugger
 
+[![CI](https://github.com/Arjunros/ros2-ai-debugger/actions/workflows/ci.yml/badge.svg)](https://github.com/Arjunros/ros2-ai-debugger/actions/workflows/ci.yml)
+![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-blue)
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+
 > AI-assisted diagnostics and troubleshooting for ROS 2 systems.
 
 ```console
@@ -203,8 +207,8 @@ Unit tests use in-memory fake backends and a deterministic broken-robot scenario
 
 | Area | Status |
 |---|---|
-| ROS 2 Humble, Ubuntu 22.04: collectors, rules, `ros2 ai`, colcon install | Tested live |
-| ROS 2 Jazzy | **Not yet tested**; APIs used exist in Jazzy but this is unverified |
+| ROS 2 Humble, Ubuntu 22.04: collectors, rules, `ros2 ai`, colcon install | Tested live and in CI |
+| ROS 2 Jazzy | Tested in CI (`ros:jazzy` container): colcon build, unit tests, live tests against the demo robot, `ros2 ai` command. Not yet tried on a physical Jazzy machine |
 | Claude provider | Tested against the real SDK with a mocked HTTP transport; **not** against the live API |
 | OpenAI, Gemini providers | Unit-tested with mocked HTTP only; not tested against live APIs |
 | Ollama provider | Request/response logic unit-tested; a live model run was not achievable on the dev machine |
@@ -217,7 +221,7 @@ snapshot actually contains; new collectors must stay read-only.
 
 ## Roadmap
 
-- Verify on Jazzy (CI matrix in Docker) and add further distributions in `utils/distro.py`.
+- Add further distributions (Iron, Kilted, Rolling) in `utils/distro.py` after verifying them in CI.
 - Live-API verification for each cloud provider.
 - Optional GitHub issue creation (`--github` currently only writes `github-report.md`).
 - Controlled, opt-in, confirmation-gated remediation (a separate capability; never in the default path).
